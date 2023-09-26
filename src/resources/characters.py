@@ -58,7 +58,7 @@ class LordEffects:
     front = 0.0
     front_gems = 0.0
     front_lord = 0.0
-    unit_bonus_id = -1
+    unit_bonus_ids = []
     unit_bonus_count = 0
     waves = 0
     waves_flank = 0
@@ -91,7 +91,7 @@ class LordEffects:
         self.front += equipment.front
         self.front_gems += equipment.front_gems
         self.front_lord += equipment.front_lord
-        self.unit_bonus_id =equipment.unit_bonus_id
+        self.unit_bonus_ids =equipment.unit_bonus_ids
         self.unit_bonus_count =equipment.unit_bonus_count
         self.waves += equipment.waves
         self.waves_flank += equipment.waves_flank
@@ -116,7 +116,7 @@ class LordEffects:
         if self.gate_gems >= GATE_GEMS_MAX: self.gate_gems = GATE_GEMS_MAX
         if self.gate_lord >= GATE_LORD_MAX: self.gate_lord = GATE_LORD_MAX
         if self.moat >= MOAT_MAX: self.moat = MOAT_MAX
-        if self.moat >= MOAT_GEMS_MAX: self.moat = MOAT_GEMS_MAX
+        if self.moat_gems >= MOAT_GEMS_MAX: self.moat_gems = MOAT_GEMS_MAX
         if self.moat_lord >= MOAT_LORD_MAX: self.moat_lord = MOAT_LORD_MAX
         if self.flank >= FLANK_MAX: self.flank = FLANK_MAX
         if self.flank_gems >= FLANK_GEMS_MAX: self.flank_gems = FLANK_GEMS_MAX
@@ -129,18 +129,21 @@ class LordEffects:
         if self.units_on_wall_lord >= UNITS_ON_WALL_LORD_MAX: self.units_on_wall_lord = UNITS_ON_WALL_LORD_MAX
 class Equipment(LordEffects):
     def __init__(self, element, element_type) -> None:
+        if len(element) == 0:
+            return None
         equipment = element[5]
         gem = []
 
         if element_type not in [SKIN, HERO]:
             gem = element[-1][-1][4]
 
-        self.add_bonuses(equipment)
+        self.add_bonuses(equipment, element_type)
         if len(gem) > 0:
-            self.add_bonuses(gem)
+            self.add_bonuses(gem, element_type)
 
     def add_bonuses(self, element, element_type):
-        for effect in element[-1][-1][4]:
+        print(element)
+        for effect in element:
             if element_type == SKIN:
                 if effect[0] == 21:
                     self.waves += effect[-1][0]
@@ -148,7 +151,7 @@ class Equipment(LordEffects):
                     self.waves_flank += effect[-1][0]
                 if effect[0] == 20:
                     self.waves_front += effect[-1][0]
-                    
+
             if effect[0] == [20018]: self.waves +=1
 
             if effect[0] in [10113, 10301]: self.units_on_wall += effect[-1][0]
@@ -167,9 +170,9 @@ class Equipment(LordEffects):
             if effect[0] in [305, 311, 10305, 10311]: self.melee_gems += effect[-1][0]
             if effect[0] in [813, 10513]: self.melee_lord += effect[-1][0]
 
-            if effect[0] in [2, 109, 10006, 10112]: self.ranged += effect[-1][0]
-            if effect[0] in [306, 312, 10306, 10312]: self.ranged_gems += effect[-1][0]
-            if effect[0] in [814, 10514]: self.ranged_lord += effect[-1][0]
+            if effect[0] in [2, 109, 10006, 10112]: self.range += effect[-1][0]
+            if effect[0] in [306, 312, 10306, 10312]: self.range_gems += effect[-1][0]
+            if effect[0] in [814, 10514]: self.range_lord += effect[-1][0]
 
             if effect[0] in [116, 10114, 302]: self.courtyard += effect[-1][0]
             if effect[0] in [308, 314, 10314, 10202, 10302]: self.courtyard_gems += effect[-1][0]
@@ -180,25 +183,32 @@ class Equipment(LordEffects):
             if effect[0] in [803, 808, 10511]: self.wall_lord += effect[-1][0]
 
             if effect[0] in [4, 104, 111, 10003, 10103]: self.gate += effect[-1][0]
-            if effect[0] in [304, 309, 10304, 10309]: self.gate_gems += effect[-1][0]
+            if effect[0] in [304, 310, 10304, 10309]: self.gate_gems += effect[-1][0]
             if effect[0] in [804, 809, 10506,  10512]: self.gate_lord += effect[-1][0]
 
             if effect[0] in [5, 105, 112, 10004, 10104]: self.moat += effect[-1][0]
-            if effect[0] in [305, 310, 10305, 10310]: self.moat_gems += effect[-1][0]
+            if effect[0] in [305, 317, 10305, 10310]: self.moat_gems += effect[-1][0]
             if effect[0] in [802, 807, 10504, 10511]: self.moat_lord += effect[-1][0]
 
+
+            if effect[0] in [20017, 20004, 20005]:
+                
+                for value in range(len(effect[-1][0])):
+                    if value % 2 == 0:
+                        self.unit_bonus_ids.append(effect[-1][0][value])
+                    else:
+                        self.unit_bonus_count = effect[-1][0][value]
 class Commander:
     commanders: List
     id: int
     wid: int
     vis: int
-    licid: Optional[int]
     n: str
     gid: int
     w: int
     d: int
     spr: int
-    eq: List[List[Union[List[Union[List[Union[List[Union[List[Union[List[float], int]], float]], int]], int]], int]]]
+    eq: List
     l: Optional[int]
     st: Optional[int]
     armor_equipment = Equipment([], CHEST)
@@ -207,19 +217,118 @@ class Commander:
     skin_equipment = Equipment([], SKIN)
     weapon_equipment = Equipment([], WEAPON)
     hero_equipment = Equipment([], HERO)
-    def __init__(self, id: int, wid: int, vis: int, licid: Optional[int], n: str, gid: int, w: int, d: int, spr: int, eq: List[List[Union[List[Union[List[Union[List[Union[List[Union[List[float], int]], float]], int]], int]], int]]], l: Optional[int], st: Optional[int]) -> None:
-        self.id = id # LORD_ID
-        self.wid = wid # WEARER_ID
-        self.vis = vis # LORD_LOOK
-        self.licid = licid # LOCKED_CASTLE_ID
-        self.n = n # LORD_NAME
-        self.gid = gid # GENERAL_ID
-        self.w = w # WINS
-        self.d = d # DEFEATS
-        self.spr = spr # WINNING_SPREE
-        self.eq = eq # EQUIPMENT
-        self.l = l # LORDS
-        self.st = st # STAR_TIER
+    def __init__(self, data) -> None:
+        self.id = data['ID'] # LORD_ID
+        self.wid = data['WID'] # WEARER_ID
+        self.vis = data['VIS'] # LORD_LOOK
+        self.n = data['N'] # LORD_NAME
+        self.gid = data['GID'] # GENERAL_ID
+        self.w = data['W'] # WINS
+        self.d = data['D'] # DEFEATS
+        self.spr = data['SPR'] # WINNING_SPREE
+        self.eq = data['EQ'] # EQUIPMENT
+        self.l = data.setdefault('L', -1) # LORDS
+        self.st = data.setdefault('ST', -1) # STAR_TIER
+        self.picID = 0
+        self.parseLord(data)
+    def createEquipment(self, equipment):
+        if len(equipment) >= 12 and equipment[11] == 3:
+            #RelicEquipment
+            return Equipment(equipment, equipment[1])
+        else:
+            if equipment[1] == HERO:
+                #CastleHero
+                return Equipment(equipment, equipment[1])
+            else:
+                #BasicEquipment
+                return Equipment(equipment, equipment[1])
+    def parseLord(self, data):
+        if data != None:
+            self.id = int(data['ID']),
+            self.equipmentSlots = {}
+            self.equipmentSlots['helmet'] = {}
+            self.equipmentSlots['chest'] = {}
+            self.equipmentSlots['weapon'] = {}
+            self.equipmentSlots['artefact'] = {}
+            self.equipmentSlots['skin'] = {}
+            self.equipmentSlots['hero'] = {}
+            #self.hardModeEffects = self.parseRawEffects(e.HME),
+            #self.rawLordEffects = self.parseRawEffects(e.E),
+            #self.areaEffects = self.parseRawEffects(e.AE),
+            self.wins = int(data['W'])
+            self.defeats = int(data['D'])
+            self.winSpree = int(data['SPR'])
+            if (data['EQ'] and len(data['EQ']) > 0):
+                #for (var n = 0, o = data['EQ']; n < o.length; n++) {
+                for n in range(len(data['EQ'])):
+                    equipment = data['EQ'][n]
+                    if (len(equipment) > 0):
+                        s = self.createEquipment(equipment)
+                        if (equipment[1]) == CHEST:
+                            self.armor_equipment = s
+                        elif (equipment[1]) == ARTEFACT:
+                            self.artifact_equipment = s
+                        elif (equipment[1]) == HELMET:
+                            self.helmet_equipment = s
+                        elif (equipment[1]) == SKIN:
+                            self.skin_equipment = s
+                        elif (equipment[1]) == WEAPON:
+                            self.weapon_equipment = s
+                        elif (equipment[1]) == HERO:
+                            self.hero_equipment = s
+
+            self._picID = int(data['VIS'])
+            self._name = data['N']
+            self.parseGeneral(data, None)
+    def get_effects(self):
+        lord_effects = LordEffects()
+        equipment_set = [self.armor_equipment, self.artifact_equipment, self.skin_equipment, self.helmet_equipment, self.hero_equipment, self.weapon_equipment]
+        for equipment in equipment_set:
+            lord_effects.add_equipment_bonuses(equipment)
+        return vars(lord_effects)
+    def parseGeneral(self, data, t):
+        if t is None:
+            t = False
+        i = data['GID']
+        if i > 0 and t:
+            self.assignedGeneralVO = General(i)
+            self.assignedGeneralVO.parseData(data)
+        else: ...
+            # self.assignedGeneralVO = h.CastleModel.generalsData.playerGenerals.get(i)
+
+class Castellan_temp:
+    commanders: List
+    id: int
+    wid: int
+    vis: int
+    licid: int
+    n: str
+    gid: int
+    w: int
+    d: int
+    spr: int
+    eq: List
+    l: Optional[int]
+    st: Optional[int]
+    armor_equipment = Equipment([], CHEST)
+    artifact_equipment = Equipment([], ARTEFACT)
+    helmet_equipment = Equipment([], HELMET)
+    skin_equipment = Equipment([], SKIN)
+    weapon_equipment = Equipment([], WEAPON)
+    hero_equipment = Equipment([], HERO)
+    def __init__(self, data) -> None:
+        self.id = data["ID"] # LORD_ID
+        self.wid = data["WID"] # WEARER_ID
+        self.vis = data["VIS"] # LORD_LOOK
+        self.licid = data["LICID"] # LOCKED_CASTLE_ID
+        self.n = data["N"] # LORD_NAME
+        self.gid = data["GID"] # GENERAL_ID
+        self.w = data["W"] # WINS
+        self.d = data["D"] # DEFEATS
+        self.spr = data["SPR"] # WINNING_SPREE
+        self.eq = data["EQ"] # EQUIPMENT
+        self.l = data.setdefault('L', -1) # LORDS
+        self.st = self.l = data.setdefault('ST', -1) # STAR_TIER
         self.picID = 0
     def createEquipment(self, equipment):
         if len(equipment) >= 12 and equipment[11] == 3:
@@ -283,7 +392,6 @@ class Commander:
             self.assignedGeneralVO = General(i)
             self.assignedGeneralVO.parseData(data)
         else: ...
-            # self.assignedGeneralVO = h.CastleModel.generalsData.playerGenerals.get(i)
 
 class Castellan:
     lockedInCastleID: int
@@ -299,11 +407,14 @@ class Castellan:
 
 
 class Welcome1:
-    b: List[Commander]
-    c: List[Commander]
+    b: 'Commander'
+    c: 'Commander'
 
     def __init__(self, b: List[dict], c: List[dict]) -> None:
-        self.b = [Commander(tuple(commander.values())) for commander in b]
+        print('a')
+        print(b)
+        
+        self.b = [Commander(tuple(commander.values()) for commander in b)]
         self.c = c
 
     def parse_GLI(self, e):

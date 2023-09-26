@@ -24,7 +24,11 @@ if __name__ == "__main__":
 
 
     # CASTELLAN/GENERAL DEFENCE DATA START
-    characters_old.Welcome1(data.gli['B'], data.gli['C'])
+    castellan = characters.Castellan_temp(data.gli['B'][0])
+    commander = characters.Commander(data.gli['C'][0])
+    #print(vars(castellan))
+    print(commander.get_effects())
+    #characters.Welcome1(data.gli['B'], data.gli['C'])
     # CASTELLAN/GENERAL DEFENCE DATA END
 
 
@@ -51,9 +55,9 @@ if __name__ == "__main__":
 
     # CASTLE DEFENCE DATA START
     keep = resources.castle.DefenceSettingsKeep().set_by_dict(data.dfk)
-    print(keep.get_as_dict())
+    #print(keep.get_as_dict())
     wall = resources.castle.DefenceSettingsWall().set_by_dict(data.dfw)
-    print(wall.get_as_dict())
+    #print(wall.get_as_dict())
     moat = resources.castle.DefenceSettingsMoat().set_by_dict(data.dfm)
-    print(moat.get_as_dict())
+    #print(moat.get_as_dict())
     # CASTLE DEFENCE DATA END
