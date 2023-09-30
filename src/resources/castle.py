@@ -4,6 +4,7 @@ import json
 from . basic import Unit
 import storage
 import traceback
+
 MAX_SLOTSIZE = 999
 MAX_SUPPORT_TOOLS_SLOTSIZE = 1
 TOOL_TYPE_WALL = 1

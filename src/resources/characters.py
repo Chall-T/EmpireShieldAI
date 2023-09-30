@@ -191,13 +191,13 @@ class Equipment(LordEffects):
             if effect[0] in [802, 807, 10504, 10511]: self.moat_lord += effect[-1][0]
 
 
-            if effect[0] in [20017, 20004, 20005]:
+            # if effect[0] in [20017, 20004, 20005]:
                 
-                for value in range(len(effect[-1][0])):
-                    if value % 2 == 0:
-                        self.unit_bonus_ids.append(effect[-1][0][value])
-                    else:
-                        self.unit_bonus_count = effect[-1][0][value]
+            #     for value in range(len(effect[-1][0])):
+            #         if value % 2 == 0:
+            #             self.unit_bonus_ids.append(effect[-1][0][value])
+            #         else:
+            #             self.unit_bonus_count = effect[-1][0][value]
 class Commander:
     commanders: List
     id: int
